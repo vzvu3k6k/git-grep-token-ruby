@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "ripper"
+require "parser/current"
 require "shellwords"
 
 word, opts = *ARGV
@@ -11,33 +11,23 @@ cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.
 
 `#{cmd}`.each_line do |file|
   file.strip!
-  f = File.open(file)
-  Ripper.lex(f).each do |(posline, poscol), type, token|
-    if type == :on_kw
-      case token
-      when "def"
-        lines << [poscol]
-        context = :define_start
-      when "end"
-        if context == :define_end && poscol == lines.last.first
-          lines.last << posline
-          (_, file, token, start, finish) = lines.pop
-          puts "#{file}:#{start}"
-          system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{token}/\\x1b[01;31m\\0\\x1b[0m/" !)
-          context = :blank
-        end
-      end
-    end
+  code = File.read(file)
 
-    if context == :define_start
-      if type == :on_ident
-        if token == word
-          lines.last.concat [file, token, posline]
-          context = :define_end
-        else
-          context = :blank
-        end
-      end
-    end
+  ast = Parser::CurrentRuby.parse(code)
+
+  nodes = if ast.type != :begin
+            [ast]
+          else
+            ast.children
+          end
+
+  nodes.select do |node|
+    (node.type == :def && node.children[0] == word.to_sym)
+  end.each do |node|
+    exp = node.loc.expression
+    start = exp.begin.line
+    finish = exp.end.line
+    puts "#{file}:#{start}"
+    system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{word}/\\x1b[01;31m\\0\\x1b[0m/" !)
   end
 end
