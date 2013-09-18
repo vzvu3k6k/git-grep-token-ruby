@@ -110,6 +110,20 @@ HEREDOC
     assert_equal [[1, 2]], loc
   end
 
+  def test_heredoc_enclosed_in_parens
+    loc = extract(parse(<<-CODE), :foo)
+foo(<<HEREDOC
+HEREDOC
+)
+
+foo(<<HEREDOC
+heredoc
+HEREDOC
+)
+    CODE
+    assert_equal [[1, 3], [5, 8]], loc
+  end
+
   def test_heredocs
     loc = extract(parse(<<-CODE), :foo)
 foo(<<HEREDOC, <<HEREDOD)

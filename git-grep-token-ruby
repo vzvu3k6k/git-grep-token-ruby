@@ -19,13 +19,9 @@ def extract(ast, word)
     (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
       (node.children.any?{|c| c == word })
   end.map do |node|
-    if node.type == :send && (last_heredoc = node.children.reverse.find{|c| c.is_a?(Parser::AST::Node) && c.type == :dstr }) # for here document
-      start = node.loc.expression.begin.line
-      finish = last_heredoc.loc.end.line
-    else
-      start = node.loc.expression.begin.line
-      finish = node.loc.expression.end.line
-    end
+    last_heredoc_line = search(node){|c| c.is_a?(Parser::AST::Node) && c.type == :dstr}.map{|node| node.loc.end.line}.max
+    start = node.loc.expression.begin.line
+    finish = [(last_heredoc_line || 0), node.loc.expression.end.line].max
     [start, finish]
   end
 end
