@@ -30,21 +30,23 @@ def extract(ast, word)
   end
 end
 
-word = ARGV.shift.to_sym
-opts = ARGV
+if $0 == __FILE__
+  word = ARGV.shift.to_sym
+  opts = ARGV
 
-cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map{|a| Shellwords.escape(a)}.join(" ")}"
-`#{cmd}`.each_line do |file|
-  file.strip!
-  code = File.read(file)
-  ast = Parser::CurrentRuby.parse(code)
+  cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map{|a| Shellwords.escape(a)}.join(" ")}"
+  `#{cmd}`.each_line do |file|
+    file.strip!
+    code = File.read(file)
+    ast = Parser::CurrentRuby.parse(code)
 
-  if ast.type != :begin
-    ast = AST::Node.new(:begin, [ast])
-  end
+    if ast.type != :begin
+      ast = AST::Node.new(:begin, [ast])
+    end
 
-  extract(ast, word).each do |(start, finish)|
-    puts "#{file}:#{start}"
-    system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{word}/\\x1b[01;31m\\0\\x1b[0m/" !)
+    extract(ast, word).each do |(start, finish)|
+      puts "#{file}:#{start}"
+      system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{word}/\\x1b[01;31m\\0\\x1b[0m/" !)
+    end
   end
 end
