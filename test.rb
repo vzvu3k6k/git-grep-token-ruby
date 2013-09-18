@@ -129,8 +129,14 @@ HEREDOC
 foo(<<HEREDOC, <<HEREDOD)
 HEREDOC
 HEREDOD
+
+foo(<<HEREDOC, <<HEREDOD)
+heredoc
+HEREDOC
+heredod
+HEREDOD
     CODE
-    assert_equal [[1, 3]], loc
+    assert_equal [[1, 3], [5, 9]], loc
   end
 
   def test_heredocs_and_block
