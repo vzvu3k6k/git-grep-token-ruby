@@ -10,16 +10,13 @@ lines = []
 cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map{|a| Shellwords.escape(a)}.join(" ")}"
 
 def search(node, &block)
-  result = []
-  node.children.each do |child|
+  node.children.each.with_object([]) do |child, result|
     if block.call(child)
       result << child
-      next
+    elsif child.is_a?(Parser::AST::Node)
+      result.concat(search(child, &block))
     end
-
-    result += search(child, &block) if child.is_a?(Parser::AST::Node)
   end
-  return result
 end
 
 `#{cmd}`.each_line do |file|
