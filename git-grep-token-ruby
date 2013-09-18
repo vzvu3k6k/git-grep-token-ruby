@@ -36,9 +36,14 @@ end
       cnode == word.to_sym
     end
   end.each do |node|
-    exp = node.loc.expression
-    start = exp.begin.line
-    finish = exp.end.line
+    if node.type == :send && (last_heredoc = node.children.reverse.find{|c| c.is_a?(Parser::AST::Node) && c.type == :dstr})
+      start = node.loc.expression.begin.line
+      finish = last_heredoc.loc.end.line
+    else
+      exp = node.loc.expression
+      start = exp.begin.line
+      finish = exp.end.line
+    end
     puts "#{file}:#{start}"
     system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{word}/\\x1b[01;31m\\0\\x1b[0m/" !)
   end
