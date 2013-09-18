@@ -30,9 +30,11 @@ end
 
   search(ast) do |node|
     next unless node.is_a?(Parser::AST::Node)
-    (node.type == :def && node.children[0] == word.to_sym) ||
-    (node.type == :send && node.children[1] == word.to_sym)||
-    (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word.to_sym)
+
+    (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word.to_sym) ||
+    node.children.any? do |cnode|
+      cnode == word.to_sym
+    end
   end.each do |node|
     exp = node.loc.expression
     start = exp.begin.line
