@@ -3,13 +3,6 @@
 require "parser/current"
 require "shellwords"
 
-word = ARGV.shift.to_sym
-opts = ARGV
-context = :nil
-lines = []
-
-cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map{|a| Shellwords.escape(a)}.join(" ")}"
-
 def search(node, &block)
   node.children.each.with_object([]) do |child, result|
     if block.call(child)
@@ -20,6 +13,27 @@ def search(node, &block)
   end
 end
 
+def extract(ast, word)
+  search(ast) do |node|
+    next unless node.is_a?(Parser::AST::Node)
+    (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
+      (node.children.any?{|c| c == word })
+  end.map do |node|
+    if node.type == :send && (last_heredoc = node.children.reverse.find{|c| c.is_a?(Parser::AST::Node) && c.type == :dstr }) # for here document
+      start = node.loc.expression.begin.line
+      finish = last_heredoc.loc.end.line
+    else
+      start = node.loc.expression.begin.line
+      finish = node.loc.expression.end.line
+    end
+    [start, finish]
+  end
+end
+
+word = ARGV.shift.to_sym
+opts = ARGV
+
+cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map{|a| Shellwords.escape(a)}.join(" ")}"
 `#{cmd}`.each_line do |file|
   file.strip!
   code = File.read(file)
@@ -29,19 +43,7 @@ end
     ast = AST::Node.new(:begin, [ast])
   end
 
-  search(ast) do |node|
-    next unless node.is_a?(Parser::AST::Node)
-
-    (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
-    (node.children.any? { |c| c == word })
-  end.each do |node|
-    if node.type == :send && (last_heredoc = node.children.reverse.find { |c| c.is_a?(Parser::AST::Node) && c.type == :dstr }) # for here document
-      start = node.loc.expression.begin.line
-      finish = last_heredoc.loc.end.line
-    else
-      start = node.loc.expression.begin.line
-      finish = node.loc.expression.end.line
-    end
+  extract(ast, word).each do |(start, finish)|
     puts "#{file}:#{start}"
     system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{word}/\\x1b[01;31m\\0\\x1b[0m/" !)
   end
