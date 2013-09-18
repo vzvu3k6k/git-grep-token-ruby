@@ -5,9 +5,10 @@ require "shellwords"
 
 def search(node, &block)
   node.children.each.with_object([]) do |child, result|
+    next unless child.is_a?(Parser::AST::Node)
     if block.call(child)
       result << child
-    elsif child.is_a?(Parser::AST::Node)
+    else
       result.concat(search(child, &block))
     end
   end
@@ -15,12 +16,11 @@ end
 
 def extract(ast, word)
   search(ast) do |node|
-    next unless node.is_a?(Parser::AST::Node)
     (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
       (node.children.any?{|c| c == word })
   end.map do |node|
     last_heredoc_line = search(node) do |c|
-      c.is_a?(Parser::AST::Node) && (c.type == :dstr || c.type == :str)
+      (c.type == :dstr || c.type == :str)
     end.map{|node| node.loc.end.line}.max
 
     start = node.loc.expression.begin.line
