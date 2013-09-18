@@ -22,7 +22,6 @@ end
 `#{cmd}`.each_line do |file|
   file.strip!
   code = File.read(file)
-
   ast = Parser::CurrentRuby.parse(code)
 
   if ast.type != :begin
