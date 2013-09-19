@@ -159,4 +159,16 @@ HEREDOC
     CODE
     assert_equal [[1, 2]], loc
   end
+
+  def test_nest_heredocs
+    loc = extract(parse(<<-'CODE'), :foo)
+foo(<<HEREDOC)
+#{<<HEREDOD}
+heredod
+HEREDOD
+heredoc
+HEREDOC
+    CODE
+    assert_equal [[1, 6]], loc
+  end
 end
