@@ -3,14 +3,14 @@
 require "parser/current"
 require "shellwords"
 
-def search(node, &block)
+def search(node, return_when_finding: true, &block)
   node.children.each.with_object([]) do |child, result|
     next unless child.is_a?(Parser::AST::Node)
     if block.call(child)
       result << child
-    else
-      result.concat(search(child, &block))
+      next if return_when_finding
     end
+    result.concat(search(child, &block))
   end
 end
 
@@ -19,8 +19,8 @@ def extract(ast, word)
     (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
       (node.children.any?{|c| c == word })
   end.map do |node|
-    last_heredoc_line = search(node){|c| (c.type == :dstr || c.type == :str)}
-      .map{|node| node.loc.end.line}.max
+    last_heredoc_line = search(node, return_when_finding: false){|c| (c.type == :dstr || c.type == :str)}
+      .map{|node| node.loc.expression.end.line}.max
 
     start = node.loc.expression.begin.line
     finish = [(last_heredoc_line || 0), node.loc.expression.end.line].max

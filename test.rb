@@ -171,4 +171,13 @@ HEREDOC
     CODE
     assert_equal [[1, 6]], loc
   end
+
+  def test_heredoc_in_str
+    loc = extract(parse(<<-'CODE'), :foo)
+foo("#{<<HEREDOC}")
+heredoc
+HEREDOC
+    CODE
+    assert_equal [[1, 3]], loc
+  end
 end
