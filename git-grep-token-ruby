@@ -42,9 +42,14 @@ if $0 == __FILE__
       ast = AST::Node.new(:begin, [ast])
     end
 
+    code_lines = code.each_line.to_a
     extract(ast, word).each do |(start, finish)|
       puts "#{file}:#{start}"
-      system(%Q!cat -n #{file} | sed -n #{start},#{finish}p | sed -e "1s/#{word}/\\x1b[01;31m\\0\\x1b[0m/" !)
+
+      snippet = code_lines[(start - 1) .. (finish - 1)].map.with_index do |line, idx|
+        "#{"%6d" % [start + idx]}  #{line.gsub(word.to_s){"\x1b[01;31m#{word}\x1b[0m"}}"
+      end.to_a.join
+      puts snippet
     end
   end
 end
