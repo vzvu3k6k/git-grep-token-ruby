@@ -19,12 +19,26 @@ def extract(ast, word)
     (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
       (node.children.any?{|c| c == word })
   end.map do |node|
-    last_heredoc_line = search(node, return_when_finding: false){|c| (c.type == :dstr || c.type == :str)}
-      .map{|node| node.loc.expression.end.line}.max
+    last_heredoc_pos = search(node, return_when_finding: false){|c| (c.type == :dstr || c.type == :str)}
+      .map{|node| node.loc.expression}.max{|i| i.end_pos}
 
-    start = node.loc.expression.begin.line
-    finish = [(last_heredoc_line || 0), node.loc.expression.end.line].max
-    [start, finish]
+    start = node.loc.expression
+    finish = [last_heredoc_pos, node.loc.expression].max_by do |i|
+      if i.nil?
+        -1
+      else
+        i.end_pos
+      end
+    end
+    [start, finish, node]
+  end
+end
+
+def wrap(node)
+  if node.type != :begin
+    node = AST::Node.new(:begin, [node])
+  else
+    node
   end
 end
 
@@ -42,13 +56,36 @@ if $0 == __FILE__
       ast = AST::Node.new(:begin, [ast])
     end
 
-    code_lines = code.each_line.to_a
-    extract(ast, word).each do |(start, finish)|
-      puts "#{file}:#{start}"
+    extract(ast, word).each do |(expression_start, expression_finish, node)|
+      start_line_num = expression_start.begin.line
+      line_start = (expression_start.begin_pos).downto(0).find{|i| code[i] == "\n"}
+      line_start = line_start.nil? ? 0 : line_start + 1
+      line_finish = (expression_finish.end_pos - 1).upto(code.size).find{|i| code[i] == "\n"}
 
-      snippet = code_lines[(start - 1) .. (finish - 1)].map.with_index do |line, idx|
-        "#{"%6d" % [start + idx]}  #{line.gsub(word.to_s){"\x1b[01;31m#{word}\x1b[0m"}}"
+      word_positions = search(wrap(node), return_when_finding: false) do |node|
+        node.children.any?{|c| c == word}
+      end.map do |node|
+        [:name, :selector].find do |prop|
+          break node.loc.send(prop) rescue next
+        end
+      end.compact
+
+      fragment = code[line_start .. line_finish]
+      prefix = "\x1b[01;31m"
+      suffix = "\x1b[0m"
+      offset_unit = prefix.size + suffix.size
+      total_offset = 0
+      word_positions.each do |wp|
+        fragment[wp.begin_pos - line_start + total_offset, 0] = prefix
+        fragment[wp.end_pos - line_start + prefix.size + total_offset, 0] = suffix
+        total_offset += offset_unit
+      end
+
+      snippet = fragment.each_line.map.with_index do |line, idx|
+        "#{"%6d" % [start_line_num + idx]}  #{line}"
       end.to_a.join
+
+      puts "#{file}:#{start_line_num}"
       puts snippet
     end
   end
