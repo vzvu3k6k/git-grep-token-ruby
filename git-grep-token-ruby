@@ -20,7 +20,7 @@ def extract(ast, word)
       (node.children.any?{|c| c == word })
   end.map do |node|
     last_heredoc_pos = search(node, return_when_finding: false){|c| (c.type == :dstr || c.type == :str)}
-      .map{|node| node.loc.expression}.max{|i| i.end_pos}
+      .map{|node| node.loc.expression}.max_by{|i| i.end_pos}
 
     start = node.loc.expression
     finish = [last_heredoc_pos, node.loc.expression].max_by do |i|
