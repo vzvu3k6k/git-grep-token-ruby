@@ -10,7 +10,7 @@ def search(node, return_when_finding: true, &block)
       result << child
       next if return_when_finding
     end
-    result.concat(search(child, &block))
+    result.concat(search(child, return_when_finding: return_when_finding, &block))
   end
 end
 
