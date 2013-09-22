@@ -4,12 +4,7 @@ load "git-grep-token-ruby"
 MiniTest::Unit.autorun
 
 def parse(code)
-  ast = Parser::CurrentRuby.parse(code)
-  if ast.type != :begin
-    AST::Node.new(:begin, [ast])
-  else
-    ast
-  end
+  wrap(Parser::CurrentRuby.parse(code))
 end
 
 class TestFoo < MiniTest::Unit::TestCase
