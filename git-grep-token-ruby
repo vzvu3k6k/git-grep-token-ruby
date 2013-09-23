@@ -60,7 +60,7 @@ if $0 == __FILE__
       start_line_num = expression_start.begin.line
       line_start = (expression_start.begin_pos).downto(0).find{|i| code[i] == "\n"}
       line_start = line_start.nil? ? 0 : line_start + 1
-      line_finish = (expression_finish.end_pos - 1).upto(code.size).find{|i| code[i] == "\n"}
+      line_finish = (expression_finish.end_pos - 1).upto(code.size - 1).find{|i| code[i] == "\n"}
 
       token_positions = search(wrap(node), return_when_finding: false) do |node|
         node.children.any?{|c| c == word}
