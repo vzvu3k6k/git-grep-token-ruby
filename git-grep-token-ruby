@@ -67,6 +67,8 @@ if $0 == __FILE__
       end.map do |node|
         [:name, :selector].find do |prop|
           break node.loc.send(prop) rescue next
+        end.tap do |position|
+          warn "Can't determine which property locates the token:\n#{node.loc}" if position.nil?
         end
       end.compact
 
