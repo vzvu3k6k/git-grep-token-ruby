@@ -4,7 +4,7 @@ load "git-grep-token-ruby"
 MiniTest::Unit.autorun
 
 def parse(code)
-  wrap(Parser::CurrentRuby.parse(code))
+  Parser::CurrentRuby.parse(code)
 end
 
 def get_start_and_end(extracteds)

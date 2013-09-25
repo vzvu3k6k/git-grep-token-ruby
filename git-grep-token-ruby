@@ -4,12 +4,15 @@ require "parser/current"
 require "shellwords"
 
 def search(node, return_when_finding: true, &block)
-  node.children.each.with_object([]) do |child, result|
-    next unless child.is_a?(Parser::AST::Node)
-    if block.call(child)
-      result << child
-      next if return_when_finding
-    end
+  result = []
+  return result unless node.is_a?(Parser::AST::Node)
+
+  if block.call(node)
+    result << node
+    return result if return_when_finding
+  end
+
+  node.children.each.with_object(result) do |child, result|
     result.concat(search(child, return_when_finding: return_when_finding, &block))
   end
 end
@@ -34,14 +37,6 @@ def extract(ast, word)
   end
 end
 
-def wrap(node)
-  if node.type != :begin
-    node = AST::Node.new(:begin, [node])
-  else
-    node
-  end
-end
-
 if $0 == __FILE__
   word = ARGV.shift.to_sym
   opts = ARGV
@@ -52,17 +47,13 @@ if $0 == __FILE__
     code = File.read(file)
     ast = Parser::CurrentRuby.parse(code)
 
-    if ast.type != :begin
-      ast = AST::Node.new(:begin, [ast])
-    end
-
     extract(ast, word).each do |(expression_start, expression_finish, node)|
       start_line_num = expression_start.begin.line
       line_start = (expression_start.begin_pos).downto(0).find{|i| code[i] == "\n"}
       line_start = line_start.nil? ? 0 : line_start + 1
       line_finish = (expression_finish.end_pos - 1).upto(code.size - 1).find{|i| code[i] == "\n"}
 
-      token_positions = search(wrap(node), return_when_finding: false) do |node|
+      token_positions = search(node, return_when_finding: false) do |node|
         node.children.any?{|c| c == word}
       end.map do |node|
         [:name, :selector].find do |prop|
