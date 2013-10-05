@@ -54,7 +54,7 @@ def token_grep(file, code, word)
       end.tap do |position|
         warn "Can't determine which property locates the token:\n#{node.loc}" if position.nil?
       end
-    end.compact
+    end.compact.sort_by(&:begin_pos)
 
     fragment = code[line_start .. line_finish]
     prefix = "\x1b[01;31m"
