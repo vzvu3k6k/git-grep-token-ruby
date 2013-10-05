@@ -5,23 +5,73 @@ Sample output:
 ```console
 $ cd ~/src/jekyll
 $ git grep-token-ruby deep_merge
+lib/jekyll.rb:80
+    80      config = config.deep_merge(override).stringify_keys
+lib/jekyll/configuration.rb:149
+   149            configuration = configuration.deep_merge(new_config)
+lib/jekyll/convertible.rb:104
+   104        data.deep_merge(further_data)
+
+lib/jekyll/convertible.rb:120
+   120          payload = payload.deep_merge({"content" => self.output, "page" => layout.data})
 lib/jekyll/core_ext.rb:8
      8    def deep_merge(hash)
      9      target = dup
-    10
+    10  
     11      hash.keys.each do |key|
     12        if hash[key].is_a? Hash and self[key].is_a? Hash
     13          target[key] = target[key].deep_merge(hash[key])
     14          next
     15        end
-    16
+    16  
     17        target[key] = hash[key]
     18      end
-    19
+    19  
     20      target
     21    end
+lib/jekyll/page.rb:110
+   110        payload = {
+   111          "page" => self.to_liquid,
+   112          'paginator' => pager.to_liquid
+   113        }.deep_merge(site_payload)
+lib/jekyll/post.rb:250
+   250        payload = {
+   251          "site" => { "related_posts" => related_posts(site_payload["site"]["posts"]) },
+   252          "page" => self.to_liquid(EXCERPT_ATTRIBUTES_FOR_LIQUID)
+   253        }.deep_merge(site_payload)
+test/test_configuration.rb:147
+   147        assert_equal Jekyll::Configuration::DEFAULTS.deep_merge({ "baseurl" => "http://wahoo.dev" }), Jekyll.configuration({ "config" => @paths[:other] })
+
+test/test_configuration.rb:169
+   169        assert_equal Jekyll::Configuration::DEFAULTS.deep_merge({ "baseurl" => "http://wahoo.dev" }), Jekyll.configuration({ "config" => [@paths[:default], @paths[:other]] })
+test/test_kramdown.rb:31
+    31        markdown = Converters::Markdown.new(@config.deep_merge(override))
+test/test_pager.rb:6
+     6      base = Jekyll::Configuration::DEFAULTS.deep_merge({
+     7        'source'      => source_dir,
+     8        'destination' => dest_dir,
+     9        'paginate'    => 1
+    10      })
+
+test/test_pager.rb:11
+    11      site = Jekyll::Site.new(base.deep_merge(config))
+test/test_tags.rb:9
+     9        Jekyll::Configuration::DEFAULTS.deep_merge({'pygments' => true}).deep_merge(override)
 ```
 
-NOTE:
+Install:
 
-* works only indent level is sane
+  $ bundle install
+
+Run test:
+
+  $ ruby test.rb
+
+Current restrictions:
+
+* Keywords (e.g. def, end) can't be searched.
+* Some tokens won't be highlighted.
+  Currently, only tokens represented as `name` and `selector`
+  in Parser::Source::Map (ParserAST::Node#loc) are supported.
+  If it comes across unsupported representations,
+  it warns "Can't determine which property locates the token: ... "
