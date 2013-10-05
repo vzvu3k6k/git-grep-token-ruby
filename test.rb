@@ -180,3 +180,11 @@ HEREDOC
     assert_equal [[0, 35]], get_start_and_end(loc)
   end
 end
+
+class TestGrep < MiniTest::Unit::TestCase
+  def test_multiple_tokens
+    assert_equal token_grep("", <<CODE, :foo), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
+foo({bar: true}).foo.foo
+CODE
+  end
+end
