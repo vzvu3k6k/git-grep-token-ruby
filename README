@@ -1,7 +1,33 @@
-Inspired by http://hitode909.hatenablog.com/entry/2013/09/13/141403
-Originally written by uu59
+This is syntax-aware grep for Ruby code.
 
 Sample output:
+
+```console
+$ grep-ruby-token extract lib/grep_ruby_token.rb
+lib/grep_ruby_token.rb:21
+    21    def self.extract(ast, word)
+    22      search(ast){|node|
+    23        (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
+    24          (node.children.any?{|c| c == word })
+    25      }.map{|node|
+    26        last_heredoc_pos = search(node, return_when_finding: false){|c| (c.type == :dstr || c.type == :str)}
+    27        .map{|node| node.loc.expression}.max_by{|i| i.end_pos}
+    28  
+    29        start = node.loc.expression
+    30        finish = [last_heredoc_pos, node.loc.expression].max_by{|i|
+    31          if i.nil?
+    32            -1
+    33          else
+    34            i.end_pos
+    35          end
+    36        }
+    37        [start, finish, node]
+    38      }
+    39    end
+
+lib/grep_ruby_token.rb:44
+    44      extract(ast, word).map{|(expression_start, expression_finish, node)|
+```
 
 ```console
 $ cd ~/src/jekyll
@@ -63,10 +89,11 @@ test/test_tags.rb:9
 Install:
 
   $ bundle install
+  $ bundle exec rake install
 
 Run test:
 
-  $ ruby test.rb
+  $ bundle exec rake test
 
 Current restrictions:
 
@@ -76,3 +103,6 @@ Current restrictions:
   in Parser::Source::Map (ParserAST::Node#loc) are supported.
   If it comes across unsupported representations,
   it warns "Can't determine which property locates the token: ... "
+
+Credit:
+This is originally written by uu59, inspired by http://hitode909.hatenablog.com/entry/2013/09/13/141403.

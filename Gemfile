@@ -1,1 +1,4 @@
-gem "parser", "~>2.0.0.pre8"
+source 'https://rubygems.org'
+
+# Specify your gem's dependencies in git-grep-token-ruby.gemspec
+gemspec

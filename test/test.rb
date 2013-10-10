@@ -1,5 +1,5 @@
 require 'minitest/unit'
-load "git-grep-token-ruby"
+require 'grep_ruby_token'
 
 MiniTest::Unit.autorun
 
@@ -14,6 +14,10 @@ def get_start_and_end(extracteds)
 end
 
 class TestFoo < MiniTest::Unit::TestCase
+  def extract(code, token)
+    GrepRubyToken::extract(code, token)
+  end
+
   def test_def
     loc = extract(parse(<<-CODE), :foo)
 def foo(x, y, z, *args)
@@ -182,8 +186,12 @@ HEREDOC
 end
 
 class TestTokenGrep < MiniTest::Unit::TestCase
+  def token_grep(code, token)
+    GrepRubyToken::token_grep("", code, token)
+  end
+
   def test_multiple_tokens
-    assert_equal token_grep("", <<CODE, :foo), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
+    assert_equal token_grep(<<CODE, :foo), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
 foo({bar: true}).foo.foo
 CODE
   end
