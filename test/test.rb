@@ -3,17 +3,17 @@ require 'grep_ruby_token'
 
 MiniTest::Unit.autorun
 
-def parse(code)
-  Parser::CurrentRuby.parse(code)
-end
-
-def get_start_and_end(extracteds)
-  extracteds.map do |(start_loc, end_loc)|
-    [start_loc.begin_pos, end_loc.end_pos]
+class TestExtract < MiniTest::Unit::TestCase
+  def parse(code)
+    Parser::CurrentRuby.parse(code)
   end
-end
 
-class TestFoo < MiniTest::Unit::TestCase
+  def get_start_and_end(extracteds)
+    extracteds.map do |(start_loc, end_loc)|
+      [start_loc.begin_pos, end_loc.end_pos]
+    end
+  end
+
   def extract(code, token)
     GrepRubyToken::extract(code, token)
   end
