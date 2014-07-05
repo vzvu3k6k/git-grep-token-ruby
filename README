@@ -106,3 +106,8 @@ Current restrictions:
 
 Credit:
 This is originally written by uu59, inspired by http://hitode909.hatenablog.com/entry/2013/09/13/141403.
+
+Similar gems:
+  * ruby_scope
+    * https://endofline.wordpress.com/2010/04/18/ruby_scope/
+    * It has a lot of useful features, but won't work in my box (version 0.1.1).
