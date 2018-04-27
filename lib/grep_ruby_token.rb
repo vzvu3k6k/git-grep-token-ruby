@@ -24,7 +24,10 @@ module GrepRubyToken
         (node.children.any?{|c| c == word })
     }.map{|node|
       last_heredoc_pos = search(node, return_when_finding: false){|c| (c.type == :dstr || c.type == :str)}
-      .map{|node| node.loc.expression}.max_by{|i| i.end_pos}
+      .map{|node|
+        loc = node.loc
+        loc.respond_to?(:heredoc_end) ? loc.heredoc_end : loc.expression
+      }.max_by(&:end_pos)
 
       start = node.loc.expression
       finish = [last_heredoc_pos, node.loc.expression].max_by{|i|
