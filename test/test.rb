@@ -1,9 +1,7 @@
-require 'minitest/unit'
+require 'minitest/autorun'
 require 'grep_ruby_token'
 
-MiniTest::Unit.autorun
-
-class TestExtract < MiniTest::Unit::TestCase
+class TestExtract < MiniTest::Test
   def parse(code)
     Parser::CurrentRuby.parse(code)
   end
@@ -185,7 +183,7 @@ HEREDOC
   end
 end
 
-class TestTokenGrep < MiniTest::Unit::TestCase
+class TestTokenGrep < MiniTest::Test
   def token_grep(code, token)
     GrepRubyToken::token_grep("", code, token)
   end
