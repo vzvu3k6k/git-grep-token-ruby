@@ -30,13 +30,7 @@ module GrepRubyToken
       }.max_by(&:end_pos)
 
       start = node.loc.expression
-      finish = [last_heredoc_pos, node.loc.expression].max_by{|i|
-        if i.nil?
-          -1
-        else
-          i.end_pos
-        end
-      }
+      finish = [last_heredoc_pos, node.loc.expression].compact.max_by(&:end_pos)
       [start, finish, node]
     }
   end
