@@ -21,11 +21,8 @@ module GrepRubyToken
     end
   end
 
-  def extract(ast, word)
-    search(ast)  do |node|
-      (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
-        (node.children.any? { |c| c == word })
-    end.map do |node|
+  def extract(ast, matcher)
+    search(ast) { |node| matcher.match?(node) }.map do |node|
       last_heredoc_pos = search(node, return_when_finding: false) { |c| (c.type == :dstr || c.type == :str) }
                          .map do |node|
         loc = node.loc
@@ -38,17 +35,17 @@ module GrepRubyToken
     end
   end
 
-  def token_grep(file, code, word)
+  def token_grep(file, code, matcher)
     ast = Parser::CurrentRuby.parse(code)
 
-    extract(ast, word).map do |(expression_start, expression_finish, node)|
+    extract(ast, matcher).map do |(expression_start, expression_finish, node)|
       start_line_num = expression_start.begin.line
       line_start = expression_start.begin_pos.downto(0).find { |i| code[i] == "\n" }
       line_start = line_start.nil? ? 0 : line_start + 1
       line_finish = (expression_finish.end_pos - 1).upto(code.size - 1).find { |i| code[i] == "\n" }
 
       token_positions = search(node, return_when_finding: false) do |node|
-        node.children.any? { |c| c == word }
+        matcher.match?(node)
       end.map do |node|
         %i[name selector].find do |prop|
           break node.loc.send(prop)

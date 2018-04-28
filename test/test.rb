@@ -2,11 +2,16 @@
 
 require 'minitest/autorun'
 require 'grep_ruby_token'
+require 'grep_ruby_token/matchers/token_matcher'
 require 'test_helper'
 
 class TestExtract < MiniTest::Test
+  def setup
+    @matcher = GrepRubyToken::Matchers::TokenMatcher.new(:foo)
+  end
+
   def test_def
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤def foo(x, y, z, *args)
         :foo
       end≥
@@ -14,7 +19,7 @@ class TestExtract < MiniTest::Test
   end
 
   def test_def_in_class
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       class Foo
         ≤def foo
           :foo
@@ -24,7 +29,7 @@ class TestExtract < MiniTest::Test
   end
 
   def test_def_in_def
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       def baz
         ≤def foo
           :bazfoo
@@ -34,18 +39,18 @@ class TestExtract < MiniTest::Test
   end
 
   def test_simple_call
-    assert_extract('≤foo≥', :foo)
+    assert_extract('≤foo≥', @matcher)
   end
 
   def test_call_with_parens
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo(1,
           1)≥
     CODE
   end
 
   def test_call_without_parens
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo 1,
           2,
           3≥
@@ -53,13 +58,13 @@ class TestExtract < MiniTest::Test
   end
 
   def test_nested_call
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       bar(≤foo(1)≥)
     CODE
   end
 
   def test_nested_call_with_multiple_arguments
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       bar(
        ≤foo(1)≥,
        ≤foo(2)≥,
@@ -69,7 +74,7 @@ class TestExtract < MiniTest::Test
   end
 
   def test_call_with_block
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo 1 do
         :block
       end≥
@@ -77,21 +82,21 @@ class TestExtract < MiniTest::Test
   end
 
   def test_assign
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo = 1,
             2≥
     CODE
   end
 
   def test_heredoc
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo(<<HEREDOC)
       HEREDOC≥
     CODE
   end
 
   def test_heredoc_enclosed_in_parens
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo(<<HEREDOC
       HEREDOC
       )≥
@@ -103,7 +108,7 @@ class TestExtract < MiniTest::Test
   end
 
   def test_heredocs
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo(<<HEREDOC, <<HEREDOD)
       HEREDOC
       HEREDOD≥
@@ -116,7 +121,7 @@ class TestExtract < MiniTest::Test
   end
 
   def test_heredocs_and_block
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo(<<HEREDOC, <<HEREDOD) do
       heredoc
       HEREDOC
@@ -128,7 +133,7 @@ class TestExtract < MiniTest::Test
   end
 
   def test_assign_heredoc
-    assert_extract(<<~CODE, :foo)
+    assert_extract(<<~CODE, @matcher)
       ≤foo = <<HEREDOC
       HEREDOC≥
     CODE
@@ -189,13 +194,19 @@ class TestExtract < MiniTest::Test
 end
 
 class TestTokenGrep < MiniTest::Test
-  def token_grep(code, token)
-    GrepRubyToken.token_grep('', code, token)
+  def setup
+    @matcher = GrepRubyToken::Matchers::TokenMatcher.new(:foo)
   end
 
   def test_multiple_tokens
-    assert_equal token_grep(<<~CODE, :foo), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
+    assert_equal token_grep(<<~CODE, @matcher), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
       foo({bar: true}).foo.foo
 CODE
+  end
+
+  private
+
+  def token_grep(code, matcher)
+    GrepRubyToken.token_grep('', code, matcher)
   end
 end
