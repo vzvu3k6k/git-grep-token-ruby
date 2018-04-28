@@ -2,12 +2,9 @@
 
 require 'minitest/autorun'
 require 'grep_ruby_token'
+require 'test_helper'
 
 class TestExtract < MiniTest::Test
-  def parse(code)
-    Parser::CurrentRuby.parse(code)
-  end
-
   def get_start_and_end(extracteds)
     extracteds.map do |(start_loc, end_loc)|
       [start_loc.begin_pos, end_loc.end_pos]
