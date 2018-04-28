@@ -1,13 +1,14 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'grep_ruby_token'
 
 word = ARGV.shift.to_sym
 opts = ARGV
 
-cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map{|a| Shellwords.escape(a)}.join(" ")}"
+cmd = "git grep --name-only #{Shellwords.escape(word)} #{[opts].flatten.compact.map { |a| Shellwords.escape(a) }.join(' ')}"
 `#{cmd}`.each_line do |file|
   file.strip!
   code = File.read(file)
-  puts GrepRubyToken::token_grep(file, code, word)
+  puts GrepRubyToken.token_grep(file, code, word)
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'minitest/autorun'
 require 'grep_ruby_token'
 
@@ -13,171 +15,171 @@ class TestExtract < MiniTest::Test
   end
 
   def extract(code, token)
-    GrepRubyToken::extract(code, token)
+    GrepRubyToken.extract(code, token)
   end
 
   def test_def
-    loc = extract(parse(<<-CODE), :foo)
-def foo(x, y, z, *args)
-  :foo
-end
+    loc = extract(parse(<<~CODE), :foo)
+      def foo(x, y, z, *args)
+        :foo
+      end
     CODE
     assert_equal [[0, 34]], get_start_and_end(loc)
   end
 
   def test_def_in_class
-    loc = extract(parse(<<-CODE), :foo)
-class Foo
-  def foo
-    :foo
-  end
-end
+    loc = extract(parse(<<~CODE), :foo)
+      class Foo
+        def foo
+          :foo
+        end
+      end
     CODE
     assert_equal [[12, 34]], get_start_and_end(loc)
   end
 
   def test_def_in_def
-    loc = extract(parse(<<-CODE), :foo)
-def baz
-  def foo
-    :bazfoo
-  end
-end
+    loc = extract(parse(<<~CODE), :foo)
+      def baz
+        def foo
+          :bazfoo
+        end
+      end
     CODE
     assert_equal [[10, 35]], get_start_and_end(loc)
   end
 
   def test_simple_call
-    loc = extract(parse(<<-CODE), :foo)
-foo
+    loc = extract(parse(<<~CODE), :foo)
+      foo
     CODE
     assert_equal [[0, 3]], get_start_and_end(loc)
   end
 
   def test_call_with_parens
-    loc = extract(parse(<<-CODE), :foo)
-foo(1,
-    1)
+    loc = extract(parse(<<~CODE), :foo)
+      foo(1,
+          1)
     CODE
     assert_equal [[0, 13]], get_start_and_end(loc)
   end
 
   def test_without_parens
-    loc = extract(parse(<<-CODE), :foo)
-foo 1,
-    2,
-    3
+    loc = extract(parse(<<~CODE), :foo)
+      foo 1,
+          2,
+          3
     CODE
     assert_equal [[0, 19]], get_start_and_end(loc)
   end
 
   def test_nest_call
-    loc = extract(parse(<<-CODE), :foo)
-bar(foo(1))
+    loc = extract(parse(<<~CODE), :foo)
+      bar(foo(1))
     CODE
     assert_equal [[4, 10]], get_start_and_end(loc)
   end
 
   def test_nest_call2
-    loc = extract(parse(<<-CODE), :foo)
-bar(
- foo(1),
- foo(2)
-)
+    loc = extract(parse(<<~CODE), :foo)
+      bar(
+       foo(1),
+       foo(2)
+      )
     CODE
     assert_equal [[6, 12], [15, 21]], get_start_and_end(loc)
   end
 
   def test_call_with_block
-    loc = extract(parse(<<-CODE), :foo)
-foo 1 do
-  :block
-end
+    loc = extract(parse(<<~CODE), :foo)
+      foo 1 do
+        :block
+      end
     CODE
     assert_equal [[0, 21]], get_start_and_end(loc)
   end
 
   def test_assign
-    loc = extract(parse(<<-CODE), :foo)
-foo = 1,
-      2
+    loc = extract(parse(<<~CODE), :foo)
+      foo = 1,
+            2
     CODE
     assert_equal [[0, 16]], get_start_and_end(loc)
   end
 
   def test_heredoc
-    loc = extract(parse(<<-CODE), :foo)
-foo(<<HEREDOC)
-HEREDOC
+    loc = extract(parse(<<~CODE), :foo)
+      foo(<<HEREDOC)
+      HEREDOC
     CODE
     assert_equal [[0, 22]], get_start_and_end(loc)
   end
 
   def test_heredoc_enclosed_in_parens
-    loc = extract(parse(<<-CODE), :foo)
-foo(<<HEREDOC
-HEREDOC
-)
-foo(<<HEREDOC
-heredoc
-HEREDOC
-)
+    loc = extract(parse(<<~CODE), :foo)
+      foo(<<HEREDOC
+      HEREDOC
+      )
+      foo(<<HEREDOC
+      heredoc
+      HEREDOC
+      )
     CODE
     assert_equal [[0, 23], [24, 55]], get_start_and_end(loc)
   end
 
   def test_heredocs
-    loc = extract(parse(<<-CODE), :foo)
-foo(<<HEREDOC, <<HEREDOD)
-HEREDOC
-HEREDOD
-foo(<<HEREDOC, <<HEREDOD)
-heredoc
-HEREDOC
-heredod
-HEREDOD
+    loc = extract(parse(<<~CODE), :foo)
+      foo(<<HEREDOC, <<HEREDOD)
+      HEREDOC
+      HEREDOD
+      foo(<<HEREDOC, <<HEREDOD)
+      heredoc
+      HEREDOC
+      heredod
+      HEREDOD
     CODE
     assert_equal [[0, 41], [42, 99]], get_start_and_end(loc)
   end
 
   def test_heredocs_and_block
-    loc = extract(parse(<<-CODE), :foo)
-foo(<<HEREDOC, <<HEREDOD) do
-heredoc
-HEREDOC
-heredod
-HEREDOD
-  :block_body
-end
+    loc = extract(parse(<<~CODE), :foo)
+      foo(<<HEREDOC, <<HEREDOD) do
+      heredoc
+      HEREDOC
+      heredod
+      HEREDOD
+        :block_body
+      end
     CODE
     assert_equal [[0, 78]], get_start_and_end(loc)
   end
 
   def test_assign_heredoc
-    loc = extract(parse(<<-CODE), :foo)
-foo = <<HEREDOC
-HEREDOC
+    loc = extract(parse(<<~CODE), :foo)
+      foo = <<HEREDOC
+      HEREDOC
     CODE
     assert_equal [[0, 23]], get_start_and_end(loc)
   end
 
   def test_nest_heredocs
-    loc = extract(parse(<<-'CODE'), :foo)
-foo(<<HEREDOC)
-#{<<HEREDOD}
-heredod
-HEREDOD
-heredoc
-HEREDOC
+    loc = extract(parse(<<~'CODE'), :foo)
+      foo(<<HEREDOC)
+      #{<<HEREDOD}
+      heredod
+      HEREDOD
+      heredoc
+      HEREDOC
     CODE
     assert_equal [[0, 59]], get_start_and_end(loc)
   end
 
   def test_heredoc_in_str
-    loc = extract(parse(<<-'CODE'), :foo)
-foo("#{<<HEREDOC}")
-heredoc
-HEREDOC
+    loc = extract(parse(<<~'CODE'), :foo)
+      foo("#{<<HEREDOC}")
+      heredoc
+      HEREDOC
     CODE
     assert_equal [[0, 35]], get_start_and_end(loc)
   end
@@ -185,12 +187,12 @@ end
 
 class TestTokenGrep < MiniTest::Test
   def token_grep(code, token)
-    GrepRubyToken::token_grep("", code, token)
+    GrepRubyToken.token_grep('', code, token)
   end
 
   def test_multiple_tokens
-    assert_equal token_grep(<<CODE, :foo), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
-foo({bar: true}).foo.foo
+    assert_equal token_grep(<<~CODE, :foo), ":1\n     1  \e[01;31mfoo\e[0m({bar: true}).\e[01;31mfoo\e[0m.\e[01;31mfoo\e[0m\n"
+      foo({bar: true}).foo.foo
 CODE
   end
 end

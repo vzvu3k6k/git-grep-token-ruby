@@ -1,15 +1,14 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'grep_ruby_token'
 
-if ARGV.size < 2
-  abort "grep-ruby-token TOKEN [FILE]..."
-end
+abort 'grep-ruby-token TOKEN [FILE]...' if ARGV.size < 2
 
 token = ARGV.shift.to_sym
 filepaths = ARGV
 
 filepaths.each do |path|
   code = File.read(path)
-  puts GrepRubyToken::token_grep(path, code, token)
+  puts GrepRubyToken.token_grep(path, code, token)
 end
