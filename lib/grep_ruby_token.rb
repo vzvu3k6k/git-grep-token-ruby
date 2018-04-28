@@ -5,7 +5,9 @@ require 'parser/current'
 require 'shellwords'
 
 module GrepRubyToken
-  def self.search(node, return_when_finding: true, &block)
+  module_function
+
+  def search(node, return_when_finding: true, &block)
     result = []
     return result unless node.is_a?(Parser::AST::Node)
 
@@ -19,7 +21,7 @@ module GrepRubyToken
     end
   end
 
-  def self.extract(ast, word)
+  def extract(ast, word)
     search(ast)  do |node|
       (node.type == :block && node.children[0].type == :send && node.children[0].children[1] == word) || # for passing a literal block
         (node.children.any? { |c| c == word })
@@ -36,7 +38,7 @@ module GrepRubyToken
     end
   end
 
-  def self.token_grep(file, code, word)
+  def token_grep(file, code, word)
     ast = Parser::CurrentRuby.parse(code)
 
     extract(ast, word).map do |(expression_start, expression_finish, node)|
